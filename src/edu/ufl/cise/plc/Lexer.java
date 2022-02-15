@@ -1,6 +1,6 @@
 package edu.ufl.cise.plc;
 
-import edu.ufl.cise.plc.Token;
+import edu.ufl.cise.plc.IToken;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -507,10 +507,11 @@ public class Lexer implements ILexer
                         }
                         if (reserved_map.containsKey(temp.toString())) {
                             Kind tempKind = reserved_map.get(temp.toString());
-                            newTok = new Token(tempKind, text.toString(), text.toString(), startPos, pos - startPos, srcLoc);
+//                            newTok = new Token(tempKind, text.toString(), text.toString(), startPos, pos - startPos, srcLoc);
+                            newTok = new Token(tempKind, temp.toString(), temp.toString(), startPos, pos - startPos, srcLoc);
                         }
                         else
-                            newTok = new Token(Kind.IDENT, text.toString(), text.toString(), startPos, pos - startPos, srcLoc);
+                            newTok = new Token(Kind.IDENT, temp.toString(), temp.toString(), startPos, pos - startPos, srcLoc);
                         if (ch == '\n')
                         {
                             column = 0;
@@ -562,21 +563,26 @@ public class Lexer implements ILexer
                 case IN_STRING -> {
                     switch(ch)
                     {
-                        case '\b','\t', '\f','\'','\\' -> {
+                        case '\b','\t', '\f','\'','\\', '\n', '\r' -> {
                             text.add(ch);
                             rawText.add('\\');
                             rawText.add(ch);
                             ++pos;
                             ++column;
+                            if (ch == '\n' || ch == '\r')
+                            {
+                                ++line;
+                                column = 0;
+                            }
                         }
-                        case '\n','\r' -> {
-                            text.add(ch);
-                            rawText.add('\\');
-                            rawText.add(ch);
-                            ++pos;
-                            ++line;
-                            column = 0;
-                        }
+//                        case '\n','\r' -> {
+//                            text.add(ch);
+//                            rawText.add('\\');
+//                            rawText.add(ch);
+//                            ++pos;
+//                            ++line;
+//                            column = 0;
+//                        }
                         case '\"' -> {
                             rawText.add('\\');
                             rawText.add(ch);
@@ -585,13 +591,23 @@ public class Lexer implements ILexer
                                 ch = chars[pos];
                             }
                             else {
-                                newTok = new Token(Kind.STRING_LIT, text.toString(), rawText.toString(), startPos, pos - startPos, srcLoc);
+                                StringBuilder temp = new StringBuilder();
+                                for (int i = 0; i < text.size(); ++i)
+                                {
+                                    temp.append(text.get(i));
+                                }
+                                newTok = new Token(Kind.STRING_LIT, temp.toString(), temp.toString(), startPos, pos - startPos, srcLoc);
                                 tokens.add(newTok);
                                 state = State.START;
                             }
-                            if (Character.isWhitespace(ch)) {
+                            if (Character.isWhitespace(ch) || ch == ';') {
+                                StringBuilder temp = new StringBuilder();
+                                for (int i = 0; i < text.size(); ++i)
+                                {
+                                    temp.append(text.get(i));
+                                }
 //                                srcLoc = new IToken.SourceLocation(line, stringStart);
-                                newTok = new Token(Kind.STRING_LIT, text.toString(), rawText.toString(), pos, startPos - pos, srcLoc);
+                                newTok = new Token(Kind.STRING_LIT, (String) temp.toString(), (String) temp.toString(), pos, startPos - pos, srcLoc);
                                 tokens.add(newTok);
                                 state = State.START;
                                 ++pos;
