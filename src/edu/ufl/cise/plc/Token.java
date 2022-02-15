@@ -29,10 +29,7 @@ public class Token implements IToken {
     @Override
     public String getText()
     {
-        if (this.kind == Kind.FLOAT_LIT || this.kind == Kind.INT_LIT)
-            return rawInput;
-        else
-            return rawInput.substring(1, rawInput.length() - 1).replace(", ", "");
+        return rawInput;
     }
 
     @Override
@@ -48,12 +45,12 @@ public class Token implements IToken {
 
     @Override
     public boolean getBooleanValue() {
-        return Boolean.parseBoolean(input.substring(1, input.length() - 1).replace(", ", ""));
+        return Boolean.parseBoolean(input);
     }
 
     @Override
     public String getStringValue() {
-        return input.substring(1, input.length() - 1).replace(", ", "");
+        return input;
     }
 
     @Override public SourceLocation getSourceLocation() {
