@@ -25,12 +25,19 @@ public class Parser implements IParser
     @Override
     public ASTNode parse() throws LexicalException, SyntaxException
     {
-        return Expr();
+        current = lexer.next();
+        return Program();
     }
 
     public Expr PrimaryExpr() throws LexicalException, SyntaxException {
         IToken first = current;
         Expr e = null;
+
+        if (first.getText().equals("console"))
+        {
+            current = lexer.next();
+            return new ConsoleExpr(first);
+        }
 
         switch(first.getKind())
         {
@@ -57,6 +64,32 @@ public class Parser implements IParser
                 }
                 else
                     throw new SyntaxException("Syntax Error");
+            }
+            case COLOR_CONST -> {
+                e =  new ColorConstExpr(first);
+            }
+            case LANGLE -> {
+                e = Expr();
+                if (current.getKind() == COMMA)
+                {
+                    Expr f = Expr();
+                    if (current.getKind() == COMMA)
+                    {
+                        Expr g = Expr();
+                        if (current.getKind() == RANGLE)
+                        {
+                            current = lexer.next();
+                            return new ColorExpr(first, e, f, g);
+                        }
+                        else
+                            throw new SyntaxException("Error");
+                    }
+                    else
+                        throw new SyntaxException("Error");
+
+                }
+                else
+                    throw new SyntaxException("Error");
             }
             default -> {
                 throw new SyntaxException("Syntax Error");
@@ -241,5 +274,202 @@ public class Parser implements IParser
         else
             e = LogicalOrExpr();
         return e;
+    }
+
+    public Statement Statement() throws SyntaxException, LexicalException {
+        IToken first = current;
+        Expr e = null;
+        PixelSelector p = null;
+        String name = first.getText();
+        if (first.getKind() == IDENT)
+        {
+            current = lexer.next();
+            if (current.getKind() == LSQUARE)
+            {
+                p = PixelSelector();
+            }
+
+            if (current.getKind() == ASSIGN)
+            {
+                e = Expr();
+                return new AssignmentStatement(first, name, p, e);
+            }
+            else if (current.getKind() == LARROW)
+            {
+                e = Expr();
+                return new ReadStatement(first, name, p, e);
+            }
+            else
+                throw new SyntaxException("Error in Statement");
+
+        }
+        else if (first.getText().equals("write"))
+        {
+            e = Expr();
+            if (current.getKind() == RARROW)
+            {
+                Expr f = Expr();
+                return new WriteStatement(first, e, f);
+            }
+            else
+                throw new SyntaxException("No RARROW");
+        }
+        else if (first.getKind() == RETURN)
+        {
+            e = Expr();
+            return new ReturnStatement(first, e);
+        }
+        else
+            throw new SyntaxException("Error in Statement");
+    }
+
+    public Dimension Dimension() throws LexicalException, SyntaxException
+    {
+        IToken first = current;
+        Expr width = null;
+        Expr height = null;
+        if (first.getKind() == LSQUARE)
+        {
+            width = Expr();
+            if (current.getKind() == COMMA)
+            {
+                height = Expr();
+                if (current.getKind() == RSQUARE)
+                {
+                    current = lexer.next();
+                }
+                else
+                {
+                    throw new SyntaxException("Error");
+                }
+            }
+            else
+            {
+                throw new SyntaxException("Error");
+            }
+        }
+        else
+        {
+            System.out.println("error");
+        }
+
+        return new Dimension(first, width, height);
+    }
+
+    public Declaration Declaration()  throws LexicalException, SyntaxException
+    {
+        IToken first = current;
+        IToken op = null;
+        Expr e = null;
+        NameDef name = null;
+
+        name = NameDef();
+        if (current.getKind() == ASSIGN || current.getKind() == LARROW)
+        {
+            op = current;
+            e = Expr();
+        }
+        return new VarDeclaration(first, name, op, e);
+    }
+
+    public NameDef NameDef() throws SyntaxException, LexicalException
+    {
+        IToken first = current;
+        String type = first.getText();
+        String name = null;
+        Dimension d = null;
+        current = lexer.next();
+
+        if (current.getKind() == IDENT)
+        {
+            name = current.getText();
+            current = lexer.next();
+            return new NameDef(first, type, name);
+        }
+        else
+        {
+            d = Dimension();
+            if (current.getKind() == IDENT)
+            {
+                name = current.getText();
+            }
+        }
+        current = lexer.next();
+        return new NameDefWithDim(first, type, name, d);
+    }
+
+    public Program Program() throws SyntaxException, LexicalException
+    {
+        IToken first = current;
+        Types.Type returnType = Types.Type.toType(first.getText());
+        String name = null;
+        List<NameDef> params = new ArrayList<NameDef>();
+        List<ASTNode> decsAndStatements = new ArrayList<ASTNode>();
+        current = lexer.next();
+        if (current.getKind() == IDENT)
+        {
+            name = current.getText();
+            current = lexer.next();
+            if (current.getKind() == LPAREN)
+            {
+                current = lexer.next();
+                if (current.getKind() != RPAREN)
+                {
+                    params.add(NameDef());
+                    while (current.getKind() == COMMA)
+                    {
+                        current = lexer.next();
+                        params.add(NameDef());
+                    }
+                    if (current.getKind() == RPAREN)
+                    {
+                        current = lexer.next();
+                        if (current.getKind() == EOF)
+                        {
+                            return new Program(first, returnType, name, params, decsAndStatements);
+                        }
+                        else
+                        {
+                            //current = lexer.next();
+                            while (current.getKind() != EOF)
+                            {
+                                if (current.getKind() == IDENT || current.getKind() == RETURN || current.getText().equals("write"))
+                                {
+                                    decsAndStatements.add(Statement());
+                                }
+                                else
+                                {
+                                    decsAndStatements.add(Declaration());
+                                }
+                                if (current.getKind() == SEMI)
+                                    current = lexer.next();
+                                else
+                                    throw new SyntaxException("Oi");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    current = lexer.next();
+                    while (current.getKind() != EOF)
+                    {
+                        if (current.getKind() == IDENT || current.getKind() == RETURN || current.getText().equals("write"))
+                        {
+                            decsAndStatements.add(Statement());
+                        }
+                        else
+                        {
+                            decsAndStatements.add(Declaration());
+                        }
+                        if (current.getKind() == SEMI)
+                            current = lexer.next();
+                        else
+                            throw new SyntaxException("Oi");
+                    }
+                }
+            }
+        }
+        return new Program(first, returnType, name, params, decsAndStatements);
     }
 }
