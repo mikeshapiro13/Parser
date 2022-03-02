@@ -600,7 +600,7 @@ public class Lexer implements ILexer
                                 tokens.add(newTok);
                                 state = State.START;
                             }
-                            if (Character.isWhitespace(ch) || ch == ';') {
+                            if (Character.isWhitespace(ch) || ch == ';' || ch == ']' || ch == ')') {
                                 StringBuilder temp = new StringBuilder();
                                 for (int i = 0; i < text.size(); ++i)
                                 {
@@ -610,9 +610,6 @@ public class Lexer implements ILexer
                                 newTok = new Token(Kind.STRING_LIT, (String) temp.toString(), (String) temp.toString(), pos, startPos - pos, srcLoc);
                                 tokens.add(newTok);
                                 state = State.START;
-                                ++pos;
-                                ++line;
-                                column = 0;
                                 text.clear();
                                 rawText.clear();
 //                                srcLoc = new IToken.SourceLocation(line, column);

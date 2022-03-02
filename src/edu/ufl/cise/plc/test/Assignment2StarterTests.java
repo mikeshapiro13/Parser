@@ -334,22 +334,22 @@ class Assignment2StarterTests {
 
 	@DisplayName("testEOF")
 	@Test
-	public void testEOF(TestInfo testinfo) throws Exception{
+	public void testEOF(TestInfo testinfo) throws Exception {
 		String input = """
-        x +
-        """;
+				x +
+				""";
 		show("-------------");
 		show(input);
-		Exception e =assertThrows(SyntaxException.class,() ->{
+		Exception e = assertThrows(SyntaxException.class, () -> {
 			getAST(input);
 		});
 		show(e);
 	}
 
-	public void invalidConditionalChecker(String input) throws Exception{
+	public void invalidConditionalChecker(String input) throws Exception {
 		show("-------------");
 		show(input);
-		Exception e =assertThrows(SyntaxException.class,() ->{
+		Exception e = assertThrows(SyntaxException.class, () -> {
 			getAST(input);
 		});
 		show(e);
@@ -357,62 +357,63 @@ class Assignment2StarterTests {
 
 	@DisplayName("testInvalidConditional1")
 	@Test
-	public void testInvalidConditional1(TestInfo testInfo)throws Exception{
+	public void testInvalidConditional1(TestInfo testInfo) throws Exception {
 
 		String input = """
-        if (
-        """;
+				if (
+				""";
 		invalidConditionalChecker(input);
 
 		String input2 = """
-        if (b
-        """;
+				if (b
+				""";
 		invalidConditionalChecker(input2);
 
 		String input3 = """
-        if (b)
-        """;
+				if (b)
+				""";
 		invalidConditionalChecker(input3);
 
 		String input4 = """
-        if (b) x
-        """;
+				if (b) x
+				""";
 		invalidConditionalChecker(input4);
 
 		String input5 = """
-        if (b) x else
-        """;
+				if (b) x else
+				""";
 		invalidConditionalChecker(input5);
 
 		String input6 = """
-        if (b) x else
-        """;
+				if (b) x else
+				""";
 		invalidConditionalChecker(input6);
 
 		String input7 = """
-        if (b) x else y
-        """;
+				if (b) x else y
+				""";
 		invalidConditionalChecker(input7);
 
 		String input8 = """
-        if (b) x else y test
-        """;
+				if (b) x else y test
+				""";
 		invalidConditionalChecker(input8);
 	}
 
 	@DisplayName("testPixelError")
 	@Test
-	public void testPixelError(TestInfo testinfo) throws Exception{
+	public void testPixelError(TestInfo testinfo) throws Exception {
 		String input = """
-      a[,
-      """;
+				a[,
+				""";
 		show("-------------");
 		show(input);
-		Exception e = assertThrows(SyntaxException.class,() ->{
+		Exception e = assertThrows(SyntaxException.class, () -> {
 			getAST(input);
 		});
 		show(e);
 	}
+
 	@DisplayName("testPEMDAS0")
 	@Test
 	public void testPEMDAS0(TestInfo testInfo) throws Exception {
@@ -585,26 +586,24 @@ class Assignment2StarterTests {
 	}
 
 
-
-
 	@DisplayName("triple_if")
 	@Test
 	public void triple_if(TestInfo testInfo) throws Exception {
 		String input = """
-        if (a < b)
-           if (l > s)
-              if (le == us)
-                 v
-              else
-                 o
-              fi
-           else
-              z
-           fi
-        else
-           c
-        fi
-        """;
+				if (a < b)
+				   if (l > s)
+				      if (le == us)
+				         v
+				      else
+				         o
+				      fi
+				   else
+				      z
+				   fi
+				else
+				   c
+				fi
+				""";
 		show("-------------");
 		show(input);
 		Expr ast = (Expr) getAST(input);
@@ -622,7 +621,6 @@ class Assignment2StarterTests {
 		Expr var19 = ((BinaryExpr) var17).getRight();
 		assertThat("", var19, instanceOf(IdentExpr.class));
 		assertEquals("b", var19.getText());
-
 
 
 		Expr var20 = ((ConditionalExpr) ast).getTrueCase();
@@ -670,10 +668,10 @@ class Assignment2StarterTests {
 
 	@DisplayName("no input")
 	@Test
-	public void nada(TestInfo testInfo) throws Exception   {
+	public void nada(TestInfo testInfo) throws Exception {
 		String input = """
-       
-        """;
+				       
+				""";
 		show(input);
 		Exception e = assertThrows(SyntaxException.class, () -> {
 			getAST(input);
@@ -685,8 +683,8 @@ class Assignment2StarterTests {
 	@Test
 	public void testParentheses(TestInfo testInfo) throws Exception {
 		String input = """
-        a + ((b + c) * 4) + e
-        """;
+				a + ((b + c) * 4) + e
+				""";
 		show("-------------");
 		show(input);
 		Expr ast = (Expr) getAST(input);
@@ -725,8 +723,151 @@ class Assignment2StarterTests {
 
 		Expr int_lit4 = ((BinaryExpr) multExpr).getRight();
 		assertThat("", int_lit4, instanceOf(IntLitExpr.class));
-		assertEquals(4,  ((IntLitExpr) int_lit4).getValue());
+		assertEquals(4, ((IntLitExpr) int_lit4).getValue());
+	}
+
+	@DisplayName("bangBool")
+	@Test
+	public void bangBool(TestInfo testInfo) throws Exception {
+		String input = """
+				!true
+				""";
+		show("-------------");
+		show(input);
+		Expr ast = (Expr) getAST(input);
+		show(ast);
+		assertThat("", ast, instanceOf(UnaryExpr.class));
+		assertEquals(BANG, ((UnaryExpr) ast).getOp().getKind());
+		Expr var1 = ((UnaryExpr) ast).getExpr();
+		assertThat("", var1, instanceOf(BooleanLitExpr.class));
+		assertEquals(true, ((BooleanLitExpr) var1).getValue());
+	}
+
+	@DisplayName("nested_if")
+	@Test
+	public void nested_if(TestInfo testInfo) throws Exception {
+		String input = """
+				if(if(z) a else b fi)
+				    x
+				else
+				    y fi
+				""";
+		show("-------------");
+		show(input);
+		Expr ast = (Expr) getAST(input);
+		show(ast);
+		assertThat("", ast, instanceOf(ConditionalExpr.class));
+
+		Expr var = ((ConditionalExpr) ast).getCondition();
+		assertThat("", var, instanceOf(ConditionalExpr.class));
+
+		Expr var2 = ((ConditionalExpr) var).getCondition();
+		assertThat("", var2, instanceOf(IdentExpr.class));
+		assertEquals("z", var2.getText());
+
+		Expr var3 = ((ConditionalExpr) var).getTrueCase();
+		assertThat("", var3, instanceOf(IdentExpr.class));
+		assertEquals("a", var3.getText());
+
+		Expr var4 = ((ConditionalExpr) var).getFalseCase();
+		assertThat("", var4, instanceOf(IdentExpr.class));
+		assertEquals("b", var4.getText());
+
+		Expr var5 = ((ConditionalExpr) ast).getTrueCase();
+		assertThat("", var5, instanceOf(IdentExpr.class));
+		assertEquals("x", var5.getText());
+
+		Expr var6 = ((ConditionalExpr) ast).getFalseCase();
+		assertThat("", var6, instanceOf(IdentExpr.class));
+		assertEquals("y", var6.getText());
 	}
 
 
+	@DisplayName("empty_paren")
+	@Test
+	public void empty_paren(TestInfo testInfo) throws Exception {
+		String input = """
+				()
+				""";
+		show("-------------");
+		show(input);
+		Exception e = assertThrows(SyntaxException.class, () -> {
+			getAST(input);
+		});
+		show(e);
+	}
+
+
+	@DisplayName("simple_paren")
+	@Test
+	public void simple_paren(TestInfo testInfo) throws Exception {
+		String input = """
+				("hello")
+				""";
+		show("-------------");
+		show(input);
+		Expr ast = (Expr) getAST(input);
+		show(ast);
+		assertThat("", ast, instanceOf(StringLitExpr.class));
+		assertEquals("hello", ((StringLitExpr) ast).getValue());
+	}
+
+	@DisplayName("extra_paren")
+	@Test
+	public void extra_paren(TestInfo testInfo) throws Exception {
+		String input = """
+				(("world"))
+				""";
+		show("-------------");
+		show(input);
+		Expr ast = (Expr) getAST(input);
+		show(ast);
+		assertThat("", ast, instanceOf(StringLitExpr.class));
+		assertEquals("world", ((StringLitExpr) ast).getValue());
+	}
+
+
+	@DisplayName("test_eof")
+	@Test
+	public void test_eof(TestInfo testInfo) throws Exception {
+		String input = """
+				1 1
+				""";
+		show("-------------");
+		show(input);
+		Expr ast = (Expr) getAST(input);
+		assertThat("", ast, instanceOf(IntLitExpr.class));
+	}
+
+
+@DisplayName("complex_unary")
+@Test
+public void complex_unary(TestInfo testInfo) throws Exception{
+String input = """
+		getWidth true[3,getWidth true]  < 9 | x != e & i
+		""";
+//[(8 < 9)] | [(x != e) & i]
+show("-------------");
+show(input);
+Expr ast = (Expr) getAST(input);
+
+
+
+show(ast);
+assertThat("", ast, instanceOf(BinaryExpr.class));
+assertEquals(OR, ((BinaryExpr) ast).getOp().getKind());
+
+Expr left1 = ((BinaryExpr) ast).getLeft();
+assertEquals(LT, ((BinaryExpr) left1).getOp().getKind());
+
+Expr right1 = ((BinaryExpr) ast).getRight();
+assertEquals(AND, ((BinaryExpr) right1).getOp().getKind());
+
+Expr final_ = ((BinaryExpr) right1).getLeft();
+assertEquals(NOT_EQUALS, ((BinaryExpr) final_).getOp().getKind());
+
 }
+
+
+}
+

@@ -51,8 +51,10 @@ public class Parser implements IParser
             }
             case LPAREN -> {
                 e = Expr();
-                if (lexer.next().getKind() == RPAREN)
+                if (current.getKind() == RPAREN) {
+                    current = lexer.next();
                     return e;
+                }
                 else
                     throw new SyntaxException("Syntax Error");
             }
