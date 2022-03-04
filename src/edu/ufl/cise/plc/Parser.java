@@ -376,6 +376,8 @@ public class Parser implements IParser
     {
         IToken first = current;
         String type = first.getText();
+        if (type.equals("void"))
+            throw new SyntaxException("Oi");
         String name = null;
         Dimension d = null;
         current = lexer.next();
@@ -401,7 +403,16 @@ public class Parser implements IParser
     public Program Program() throws SyntaxException, LexicalException
     {
         IToken first = current;
-        Types.Type returnType = Types.Type.toType(first.getText());
+        Types.Type returnType;
+        try
+        {
+            returnType = Types.Type.toType(first.getText());
+        }
+        catch(IllegalArgumentException e)
+        {
+           throw new SyntaxException("Oi");
+        }
+
         String name = null;
         List<NameDef> params = new ArrayList<NameDef>();
         List<ASTNode> decsAndStatements = new ArrayList<ASTNode>();
@@ -419,6 +430,8 @@ public class Parser implements IParser
                     while (current.getKind() == COMMA)
                     {
                         current = lexer.next();
+                        if (current.getKind() == RPAREN)
+                            throw new SyntaxException("Oi");
                         params.add(NameDef());
                     }
                     if (current.getKind() == RPAREN)
@@ -458,10 +471,12 @@ public class Parser implements IParser
                         {
                             decsAndStatements.add(Statement());
                         }
-                        else
+                        else if (current.getText().equals("boolean") || current.getText().equals("color") || current.getText().equals("float") || current.getText().equals("image") || current.getText().equals("int") || current.getText().equals("string"))
                         {
                             decsAndStatements.add(Declaration());
                         }
+                        else
+                            throw new SyntaxException("Oi");
                         if (current.getKind() == SEMI)
                             current = lexer.next();
                         else
@@ -470,6 +485,8 @@ public class Parser implements IParser
                 }
             }
         }
+        else
+            throw new SyntaxException("Invalid Program");
         return new Program(first, returnType, name, params, decsAndStatements);
     }
 }
