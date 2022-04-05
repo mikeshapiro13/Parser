@@ -12,5 +12,6 @@ public class CompilerComponentFactory {
 	}
 
 	public static IParser getParser(String input) { return new Parser(input);}
-	
+
+	public static TypeCheckVisitor getTypeChecker() { return new TypeCheckVisitor(); }
 }
