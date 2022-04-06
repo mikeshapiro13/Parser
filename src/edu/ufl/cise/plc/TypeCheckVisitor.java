@@ -5,33 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.ufl.cise.plc.IToken.Kind;
-import edu.ufl.cise.plc.ast.ASTNode;
-import edu.ufl.cise.plc.ast.ASTVisitor;
-import edu.ufl.cise.plc.ast.AssignmentStatement;
-import edu.ufl.cise.plc.ast.BinaryExpr;
-import edu.ufl.cise.plc.ast.BooleanLitExpr;
-import edu.ufl.cise.plc.ast.ColorConstExpr;
-import edu.ufl.cise.plc.ast.ColorExpr;
-import edu.ufl.cise.plc.ast.ConditionalExpr;
-import edu.ufl.cise.plc.ast.ConsoleExpr;
-import edu.ufl.cise.plc.ast.Declaration;
-import edu.ufl.cise.plc.ast.Dimension;
-import edu.ufl.cise.plc.ast.Expr;
-import edu.ufl.cise.plc.ast.FloatLitExpr;
-import edu.ufl.cise.plc.ast.IdentExpr;
-import edu.ufl.cise.plc.ast.IntLitExpr;
-import edu.ufl.cise.plc.ast.NameDef;
-import edu.ufl.cise.plc.ast.NameDefWithDim;
-import edu.ufl.cise.plc.ast.PixelSelector;
-import edu.ufl.cise.plc.ast.Program;
-import edu.ufl.cise.plc.ast.ReadStatement;
-import edu.ufl.cise.plc.ast.ReturnStatement;
-import edu.ufl.cise.plc.ast.StringLitExpr;
+import edu.ufl.cise.plc.ast.*;
 import edu.ufl.cise.plc.ast.Types.Type;
-import edu.ufl.cise.plc.ast.UnaryExpr;
-import edu.ufl.cise.plc.ast.UnaryExprPostfix;
-import edu.ufl.cise.plc.ast.VarDeclaration;
-import edu.ufl.cise.plc.ast.WriteStatement;
 
 import static edu.ufl.cise.plc.ast.Types.Type.*;
 
@@ -138,6 +113,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 		Kind op = binaryExpr.getOp().getKind();
 		Type left = (Type) binaryExpr.getLeft().visit(this, arg);
 		Type right = (Type) binaryExpr.getRight().visit(this, arg);
+		if (left == STRING || right == STRING)
+			throw new TypeCheckException("No Strings in binary");
 		switch (op)
 		{
 			case AND, OR -> {
@@ -328,7 +305,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 			Type expType = (Type) assignmentStatement.getExpr().visit(this, arg);
 			if (expType == varType)
 				assignmentStatement.getExpr().setCoerceTo(null);
-			if (expType == INT && varType == FLOAT)
+			else if (expType == INT && varType == FLOAT)
 				assignmentStatement.getExpr().setCoerceTo(FLOAT);
 			else if (expType == FLOAT && varType == INT)
 				assignmentStatement.getExpr().setCoerceTo(INT);
@@ -337,11 +314,11 @@ public class TypeCheckVisitor implements ASTVisitor {
 			else if (expType == INT && varType == COLOR)
 				assignmentStatement.getExpr().setCoerceTo(COLOR);
 			else
-				throw new TypeCheckException("Invalid assignment");
+				throw new TypeCheckException("Invalid assignment 1");
 		}
 		else if (assignmentStatement.getSelector() == null)
 		{
-			Type expType = (Type) assignmentStatement.visit(this, arg);
+			Type expType = (Type) assignmentStatement.getExpr().visit(this, arg);
 			if (expType == varType || expType == COLOR || expType == COLORFLOAT)
 				assignmentStatement.getExpr().setCoerceTo(null);
 			else if (expType == INT)
@@ -349,27 +326,28 @@ public class TypeCheckVisitor implements ASTVisitor {
 			else if (expType == FLOAT)
 				assignmentStatement.getExpr().setCoerceTo(COLORFLOAT);
 			else
-				throw new TypeCheckException("Invalid Assignment");
+				throw new TypeCheckException("Invalid Assignment 2");
 		}
 		else if (assignmentStatement.getSelector() != null)
 		{
-			Expr x = assignmentStatement.getSelector().getX();
-			Expr y = assignmentStatement.getSelector().getY();
-			if (symbolTable.lookup(x.getText()) != null || symbolTable.lookup(y.getText()) != null)
+			Expr xTemp = assignmentStatement.getSelector().getX();
+			Expr yTemp = assignmentStatement.getSelector().getY();
+			if (symbolTable.lookup(xTemp.getText()) != null || symbolTable.lookup(yTemp.getText()) != null)
 				throw new TypeCheckException("Pixel selector variable already defined globally");
-			if (x instanceof IdentExpr && y instanceof IdentExpr)
+			if (xTemp instanceof IdentExpr && yTemp instanceof IdentExpr)
 			{
-				NameDef xDef = new NameDef(null, "int", x.getText());
-				NameDef  yDef = new NameDef(null, "int", y.getText());
-				symbolTable.insert(x.getText(), xDef);
-				symbolTable.insert(y.getText(), yDef);
+				NameDef x = new NameDef(null, "int", xTemp.getText());
+				NameDef  y = new NameDef(null, "int", yTemp.getText());
+				symbolTable.insert(xTemp.getText(), x);
+				symbolTable.insert(yTemp.getText(), y);
 				Type checkRHS = (Type) assignmentStatement.getExpr().visit(this, arg);
 				if (checkRHS == COLOR ||checkRHS == COLORFLOAT ||checkRHS == FLOAT ||checkRHS == INT)
 					assignmentStatement.getExpr().setCoerceTo(COLOR);
 				else
 					throw new TypeCheckException("Invalid rhs");
-				symbolTable.remove(x.getText());
-				symbolTable.remove(y.getText());
+				assignmentStatement.getSelector().visit(this, arg);
+				symbolTable.remove(xTemp.getText());
+				symbolTable.remove(yTemp.getText());
 			}
 			else
 				throw new TypeCheckException("Not IdentExpr");
@@ -388,6 +366,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		check(destType == Type.STRING || destType == Type.CONSOLE, writeStatement,
 				"illegal destination type for write");
 		check(sourceType != Type.CONSOLE, writeStatement, "illegal source type for write");
+		//writeStatement.getDest().setCoerceTo(sourceType);
 		return null;
 	}
 
@@ -399,6 +378,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 		check(readStatement.getSelector() == null, readStatement, "No pixel selectors allowed");
 		Type check = (Type) readStatement.getSource().visit(this, arg);
 		check(check == CONSOLE || check == STRING, readStatement, "Invalid type");
+		if (check == CONSOLE)
+			readStatement.getSource().setCoerceTo(target.getType());
 		target.setInitialized(true);
 		readStatement.setTargetDec(target);
 		symbolTable.insert(name, target);
@@ -410,34 +391,45 @@ public class TypeCheckVisitor implements ASTVisitor {
 		Type ndType = (Type) declaration.getNameDef().visit(this, arg);
 		if (ndType == IMAGE)
 		{
+
 			if (declaration.getExpr() != null)
 			{
 				Type inType = (Type) declaration.getExpr().visit(this, arg);
-				if (declaration.getDim() != null) {
-					Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
-					Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
-					if (height == INT || width == INT)
-						if (height != width)
-							throw new TypeCheckException("Both dims not INTS");
-				} else if (inType != IMAGE) {
+//				if (declaration.getDim() != null) {
+//					Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
+//					Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
+//					if (height == INT || width == INT)
+//						if (height != width)
+//							throw new TypeCheckException("Both dims not INTS");
+				if (inType != IMAGE) {
 					throw new TypeCheckException("Init type not IMAGE");
 				}
-				if (declaration.getOp().getKind() == Kind.ASSIGN) {
-					Type exprType = (Type) declaration.getExpr().visit(this, arg);
-					if (exprType == INT)
-						declaration.getExpr().setCoerceTo(COLOR);
-					else if (exprType == FLOAT)
-						declaration.getExpr().setCoerceTo(COLORFLOAT);
-					else if (exprType == COLOR || exprType == COLORFLOAT)
-						declaration.getExpr().setCoerceTo(null);
-					else
-						throw new TypeCheckException("VarDec image assignment error");
-				} else if (declaration.getOp().getKind() == Kind.LARROW) {
-					Type exprType = (Type) declaration.getExpr().visit(this, arg);
-					if (exprType != STRING && exprType != CONSOLE)
-						throw new TypeCheckException("VarDec image read error");
-				}
+//				if (declaration.getOp().getKind() == Kind.ASSIGN) {
+//					Type exprType = (Type) declaration.getExpr().visit(this, arg);
+//					if (exprType == INT)
+//						declaration.getExpr().setCoerceTo(COLOR);
+//					else if (exprType == FLOAT)
+//						declaration.getExpr().setCoerceTo(COLORFLOAT);
+//					else if (exprType == COLOR || exprType == COLORFLOAT)
+//						declaration.getExpr().setCoerceTo(null);
+//					else
+//						throw new TypeCheckException("VarDec image assignment error");
+//				} else if (declaration.getOp().getKind() == Kind.LARROW) {
+//					Type exprType = (Type) declaration.getExpr().visit(this, arg);
+//					if (exprType != STRING && exprType != CONSOLE)
+//						throw new TypeCheckException("VarDec image read error");
+//				}
 			}
+			else if (declaration.getDim() != null)
+			{
+				Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
+				Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
+				if (height == INT || width == INT)
+					if (height != width)
+						throw new TypeCheckException("Both dims not INTS");
+			}
+			else
+				throw new TypeCheckException("Idk");
 		}
 		else if (declaration.getExpr() != null)
 		{
@@ -457,14 +449,20 @@ public class TypeCheckVisitor implements ASTVisitor {
 					declaration.getExpr().setCoerceTo(COLOR);
 				else
 					throw new TypeCheckException("Invalid VarDec nonimage assignment");
-
 			}
 			else if (declaration.getOp().getKind() == Kind.LARROW)
 			{
 				Type expType = (Type) declaration.getExpr().visit(this, arg);
+				if (expType == CONSOLE)
+					declaration.getExpr().setCoerceTo(declaration.getNameDef().getType());
 				if (expType != CONSOLE && expType != STRING)
 					throw new TypeCheckException("Invalid VarDec nonimage read");
 			}
+			declaration.getNameDef().setInitialized(true);
+		}
+		else if (declaration.getExpr() == null)
+		{
+			declaration.setInitialized(false);
 		}
 		else
 			throw new TypeCheckException("Bad VarDec");
@@ -479,7 +477,10 @@ public class TypeCheckVisitor implements ASTVisitor {
 		for (NameDef nd : list)
 		{
 			if (symbolTable.lookup(nd.getName()) == null)
+			{
+				nd.setInitialized(true);
 				symbolTable.insert(nd.getName(), nd);
+			}
 			else
 				throw new TypeCheckException("Name already in use");
 		}
@@ -511,6 +512,13 @@ public class TypeCheckVisitor implements ASTVisitor {
 		Type returnType = root.getReturnType();  //This is why we save program in visitProgram.
 		Type expressionType = (Type) returnStatement.getExpr().visit(this, arg);
 		check(returnType == expressionType, returnStatement, "return statement with invalid type");
+		if (returnStatement.getExpr() instanceof IdentExpr)
+		{
+			Declaration test = symbolTable.lookup(returnStatement.getExpr().getText());
+			if (test != null)
+				if (!test.isInitialized())
+					throw new TypeCheckException("Bad Error");
+		}
 		return null;
 	}
 

@@ -70,7 +70,7 @@ void show(Object obj) {
 	}
 }
 static PrintStream out = System.out;
-static int seconds = 2;
+static int seconds = 200000;
 
 
 

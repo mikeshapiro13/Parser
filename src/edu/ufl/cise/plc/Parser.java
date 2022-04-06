@@ -382,13 +382,22 @@ public class Parser implements IParser
         Dimension d = null;
         current = lexer.next();
 
+        try
+        {
+            Types.Type test = Types.toType(type);
+        }
+        catch (IllegalArgumentException r)
+        {
+            throw new SyntaxException("LMAO");
+        }
+
         if (current.getKind() == IDENT)
         {
             name = current.getText();
             current = lexer.next();
             return new NameDef(first, type, name);
         }
-        else
+        else if (current.getKind() == LSQUARE)
         {
             d = Dimension();
             if (current.getKind() == IDENT)
@@ -396,6 +405,8 @@ public class Parser implements IParser
                 name = current.getText();
             }
         }
+        else
+            throw new SyntaxException("Error");
         current = lexer.next();
         return new NameDefWithDim(first, type, name, d);
     }

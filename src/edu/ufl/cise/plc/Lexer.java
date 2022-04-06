@@ -600,7 +600,7 @@ public class Lexer implements ILexer
                                 tokens.add(newTok);
                                 state = State.START;
                             }
-                            if (Character.isWhitespace(ch) || ch == ';' || ch == ']' || ch == ')'|| ch ==',') {
+                            if (Character.isWhitespace(ch) || ch == ';' || ch == ']' || ch == ')'|| ch ==',' || ch =='-') {
                                 StringBuilder temp = new StringBuilder();
                                 for (int i = 0; i < text.size(); ++i)
                                 {
