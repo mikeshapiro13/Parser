@@ -23,7 +23,7 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitStringLitExpr(StringLitExpr stringLitExpr, Object arg) throws Exception {
         StringBuilder string = new StringBuilder();
-        string.append("\"\"\"").append(stringLitExpr.getValue()).append("\"\"\"");
+        string.append("\"\"\"\n").append(stringLitExpr.getValue()).append("\"\"\"\n");
         return string;
     }
 
@@ -45,7 +45,7 @@ public class CodeGenVisitor implements ASTVisitor
         {
             f.append("(").append(floatLitExpr.getType()).append(")");
         }
-        f.append(floatLitExpr.getText());
+        f.append(floatLitExpr.getText()).append("f");
         return f;
     }
 
@@ -56,7 +56,39 @@ public class CodeGenVisitor implements ASTVisitor
 
     @Override
     public Object visitConsoleExpr(ConsoleExpr consoleExpr, Object arg) throws Exception {
-        return null;
+        StringBuilder c = new StringBuilder();
+        c.append("(");
+        switch(consoleExpr.getCoerceTo().toString()) {
+            case "INT" -> {
+                c.append("Integer").append(") ");
+            }
+            case "STRING" -> {
+                c.append("String").append(") ");
+            }
+            case "BOOL" -> {
+                c.append("Boolean").append(") ");
+            }
+            case "FLOAT" -> {
+                c.append("Float").append(") ");
+            }
+        }
+        c.append("ConsoleIO.readValueFromConsole(\"").append(consoleExpr.getCoerceTo()).append("\", ").append("\"Enter ");
+        switch (consoleExpr.getCoerceTo().toString())
+        {
+            case "INT" -> {
+                c.append("integer:").append("\")");
+            }
+            case "STRING" -> {
+                c.append("string:").append("\")");
+            }
+            case "BOOL" -> {
+                c.append("boolean:").append("\")");
+            }
+            case "FLOAT" -> {
+                c.append("float:").append("\")");
+            }
+        }
+        return c;
     }
 
     @Override
@@ -75,9 +107,9 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitBinaryExpr(BinaryExpr binaryExpr, Object arg) throws Exception {
         StringBuilder b = new StringBuilder();
-        b.append("(").append(binaryExpr.getLeft().getText());
+        b.append("(").append(binaryExpr.getLeft().visit(this, arg));
         b.append(" ").append(binaryExpr.getOp().getText());
-        b.append(" ").append(binaryExpr.getRight().getText()).append(")");
+        b.append(" ").append(binaryExpr.getRight().visit(this, arg)).append(")");
         return b;
     }
 
@@ -115,21 +147,21 @@ public class CodeGenVisitor implements ASTVisitor
     public Object visitAssignmentStatement(AssignmentStatement assignmentStatement, Object arg) throws Exception {
         StringBuilder a = new StringBuilder();
         a.append(assignmentStatement.getName()).append(" = ");
-        a.append(assignmentStatement.getExpr().getText()).append(";");
+        a.append(assignmentStatement.getExpr().visit(this, arg)).append(";\n");
         return a;
     }
 
     @Override
     public Object visitWriteStatement(WriteStatement writeStatement, Object arg) throws Exception {
         StringBuilder w = new StringBuilder();
-        w.append("Console.IO.console.println(").append(writeStatement.getSource().getText()).append(");");
+        w.append("ConsoleIO.console.println(").append(writeStatement.getSource().getText()).append(");");
         return w;
     }
 
     @Override
     public Object visitReadStatement(ReadStatement readStatement, Object arg) throws Exception {
         StringBuilder r = new StringBuilder();
-        r.append(readStatement.getName()).append(" = ").append(readStatement.getSource().getText()).append(";");
+        r.append(readStatement.getName()).append(" = ").append(readStatement.getSource().visit(this, arg)).append(";\n");
         return r;
     }
 
@@ -137,11 +169,23 @@ public class CodeGenVisitor implements ASTVisitor
     public Object visitProgram(Program program, Object arg) throws Exception {
         StringBuilder p = new StringBuilder();
         p.append("package ").append(packageName).append(";\n");
-        //Add imports
-        p.append("public class ").append(program.getName()).append(" {\n").append("public static ").append(program.getReturnType().toString().toLowerCase()).append(" apply(");
+        String test = program.getDecsAndStatements().toString();
+        if (program.getDecsAndStatements().toString().lastIndexOf("ConsoleExpr") > 0)
+            p.append("import edu.ufl.cise.plc.runtime.ConsoleIO;\n");
+        String check = program.getReturnType().toString().toLowerCase();
+        if (check.equals("string"))
+            check = "String";
+        p.append("public class ").append(program.getName()).append(" {\n").append("public static ").append(check).append(" apply(");
         List<NameDef> params = program.getParams();
+        int size = 0;
         for(NameDef nd : params)
-            nd.visit(this, arg);
+        {
+            ++size;
+            if (size < params.size())
+                p.append(nd.visit(this, arg)).append(", ");
+            else
+                p.append(nd.visit(this,arg));
+        }
         p.append("){\n");
         List<ASTNode> das = program.getDecsAndStatements();
         for (ASTNode d : das)
@@ -153,7 +197,7 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitNameDef(NameDef nameDef, Object arg) throws Exception {
         StringBuilder nd = new StringBuilder();
-        nd.append(nameDef.getType()).append(" ").append(nameDef.getName());
+        nd.append(nameDef.getType().toString().toLowerCase()).append(" ").append(nameDef.getName());
         return nd;
     }
 
@@ -165,19 +209,24 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitReturnStatement(ReturnStatement returnStatement, Object arg) throws Exception {
         StringBuilder r = new StringBuilder();
-        r.append("return ").append(returnStatement.getExpr().getText()).append(";");
+        r.append("return ").append(returnStatement.getExpr().visit(this, arg)).append(";");
         return r;
     }
 
     @Override
     public Object visitVarDeclaration(VarDeclaration declaration, Object arg) throws Exception {
-        StringBuilder v = (StringBuilder) arg;
-        v.append(declaration.getName());
+        StringBuilder v = new StringBuilder();
+        String check = declaration.getNameDef().getText().toLowerCase();
+        if (check.equals("string"))
+            check = "String";
+        v.append(check).append(" ").append(declaration.getName());
         if (declaration.getExpr() != null)
         {
             v.append(" = ").append(declaration.getExpr().getText());
+            if (check.equals("float"))
+                v.append("f");
         }
-        v.append(";");
+        v.append(";\n");
         return v;
     }
 

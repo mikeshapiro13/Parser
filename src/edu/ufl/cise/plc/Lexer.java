@@ -111,6 +111,7 @@ public class Lexer implements ILexer
                         case '"' -> {
                             state = State.IN_STRING;
                             stringStart = pos;
+                            //rawText.add('\\');
                             rawText.add(ch);
                             srcLoc = new IToken.SourceLocation(line, column);
                             ++pos;
@@ -584,7 +585,7 @@ public class Lexer implements ILexer
 //                            column = 0;
 //                        }
                         case '\"' -> {
-                            rawText.add('\\');
+                            //rawText.add('\\');
                             rawText.add(ch);
                             ++pos;
                             if (pos < chars.length) {
@@ -592,22 +593,20 @@ public class Lexer implements ILexer
                             }
                             else {
                                 StringBuilder temp = new StringBuilder();
-                                for (int i = 0; i < text.size(); ++i)
-                                {
-                                    temp.append(text.get(i));
-                                }
-                                newTok = new Token(Kind.STRING_LIT, temp.toString(), temp.toString(), startPos, pos - startPos, srcLoc);
+                                for (Character character : text) temp.append(character);
+                                StringBuilder temp2 = new StringBuilder();
+                                for (Character character : rawText) temp2.append(character);
+                                newTok = new Token(Kind.STRING_LIT, temp.toString(), temp2.toString(), startPos, pos - startPos, srcLoc);
                                 tokens.add(newTok);
                                 state = State.START;
                             }
                             if (Character.isWhitespace(ch) || ch == ';' || ch == ']' || ch == ')'|| ch ==',' || ch =='-') {
                                 StringBuilder temp = new StringBuilder();
-                                for (int i = 0; i < text.size(); ++i)
-                                {
-                                    temp.append(text.get(i));
-                                }
+                                for (Character character : text) temp.append(character);
+                                StringBuilder temp2 = new StringBuilder();
+                                for (Character character : rawText) temp2.append(character);
 //                                srcLoc = new IToken.SourceLocation(line, stringStart);
-                                newTok = new Token(Kind.STRING_LIT, (String) temp.toString(), (String) temp.toString(), pos, startPos - pos, srcLoc);
+                                newTok = new Token(Kind.STRING_LIT, (String) temp.toString(), (String) temp2.toString(), pos, startPos - pos, srcLoc);
                                 tokens.add(newTok);
                                 state = State.START;
                                 text.clear();
