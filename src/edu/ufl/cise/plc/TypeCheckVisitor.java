@@ -113,8 +113,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 		Kind op = binaryExpr.getOp().getKind();
 		Type left = (Type) binaryExpr.getLeft().visit(this, arg);
 		Type right = (Type) binaryExpr.getRight().visit(this, arg);
-		if (left == STRING || right == STRING)
-			throw new TypeCheckException("No Strings in binary");
+//		if (left == STRING || right == STRING)
+//			throw new TypeCheckException("No Strings in binary");
 		switch (op)
 		{
 			case AND, OR -> {
