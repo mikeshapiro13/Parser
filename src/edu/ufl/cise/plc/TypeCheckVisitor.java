@@ -479,13 +479,19 @@ public class TypeCheckVisitor implements ASTVisitor {
 
 	@Override
 	public Object visitNameDef(NameDef nameDef, Object arg) throws Exception {
-		symbolTable.insert(nameDef.getName(), nameDef);
+		if (symbolTable.lookup(nameDef.getName()) == null)
+			symbolTable.insert(nameDef.getName(), nameDef);
+		else
+			throw new TypeCheckException("Name already exists");
 		return nameDef.getType();
 	}
 
 	@Override
 	public Object visitNameDefWithDim(NameDefWithDim nameDefWithDim, Object arg) throws Exception {
-		symbolTable.insert(nameDefWithDim.getName(), nameDefWithDim);
+		if (symbolTable.lookup(nameDefWithDim.getName()) == null)
+			symbolTable.insert(nameDefWithDim.getName(), nameDefWithDim);
+		else
+			throw new TypeCheckException("Name already exists");
 		return nameDefWithDim.getType();
 	}
  

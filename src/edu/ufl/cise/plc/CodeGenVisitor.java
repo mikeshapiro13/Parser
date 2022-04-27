@@ -83,6 +83,9 @@ public class CodeGenVisitor implements ASTVisitor
             case "IMAGE" -> {
                 c.append("BufferedImage").append(") ");
             }
+            case "COLOR" -> {
+                c.append("ColorTuple").append(") ");
+            }
         }
         c.append("ConsoleIO.readValueFromConsole(\"").append(consoleExpr.getCoerceTo().toString()).append("\", ").append("\"Enter ");
         switch (consoleExpr.getCoerceTo().toString())
@@ -100,9 +103,10 @@ public class CodeGenVisitor implements ASTVisitor
                 c.append("float:").append("\")");
             }
             case "COLOR" -> {
-                c.append("RGB values:").append("\"");
+                c.append("RGB values:").append("\")");
             }
         }
+        c.append(";\n");
         return c;
     }
 
@@ -163,6 +167,8 @@ public class CodeGenVisitor implements ASTVisitor
             case TIMES -> Op = "ImageOps.OP.TIMES";
             case MOD -> Op = "ImageOps.OP.MOD";
             case DIV -> Op = "ImageOps.OP.DIV";
+            case EQUALS -> Op = "ImageOps.BoolOP.EQUALS";
+            case NOT_EQUALS -> Op= "ImageOps.BoolOP.NOT_EQUALS";
         }
         if (binaryExpr.getLeft().getType() == Types.Type.COLOR && binaryExpr.getRight().getType() == Types.Type.COLOR)
         {
@@ -194,6 +200,12 @@ public class CodeGenVisitor implements ASTVisitor
             if (binaryExpr.getCoerceTo() != null) {
                 String test = binaryExpr.getCoerceTo().toString().toLowerCase();
                 switch (test) {
+                    case "image" -> {
+                        b.append("(BufferedImage)");
+                    }
+                    case "color" -> {
+                        b.append("(ColorTuple)");
+                    }
                     case "float" -> {
                         b.append("(float)");
                     }
@@ -293,7 +305,7 @@ public class CodeGenVisitor implements ASTVisitor
                 a.append(assignmentStatement.getTargetDec().getDim().getWidth().visit(this, arg));
                 a.append(", ");
                 a.append(assignmentStatement.getTargetDec().getDim().getHeight().visit(this, arg));
-                a.append(")");
+                a.append(");");
 
             }
             else
@@ -305,7 +317,7 @@ public class CodeGenVisitor implements ASTVisitor
                 {
                     a.append(assignmentStatement.getName());
                     a.append("= ImageOps.clone(");
-                    a.append(assignmentStatement.getExpr().visit(this, arg)).append(")");
+                    a.append(assignmentStatement.getExpr().visit(this, arg)).append(");");
                 }
             }
         }
@@ -335,7 +347,7 @@ public class CodeGenVisitor implements ASTVisitor
         else
         {
             a.append(assignmentStatement.getName()).append(" = ");
-            a.append(assignmentStatement.getExpr().visit(this, arg));
+            a.append(assignmentStatement.getExpr().visit(this, arg)).append(";");
         }
         a.append("\n");
         return a;
