@@ -3,23 +3,13 @@ package edu.ufl.cise.plc.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
-import edu.ufl.cise.plc.CodeGenVisitor;
 import edu.ufl.cise.plc.CompilerComponentFactory;
-import edu.ufl.cise.plc.IParser;
 //import edu.ufl.cise.plc.ImageResources;
-import edu.ufl.cise.plc.TypeCheckException;
-import edu.ufl.cise.plc.TypeCheckVisitor;
 import edu.ufl.cise.plc.ast.ASTNode;
-import edu.ufl.cise.plc.ast.ASTVisitor;
 import edu.ufl.cise.plc.ast.Program;
 //import edu.ufl.cise.plc.runtime.ColorTuple;
-import edu.ufl.cise.plc.runtime.ConsoleIO;
 import edu.ufl.cise.plc.runtime.javaCompilerClassLoader.DynamicClassLoader;
 import edu.ufl.cise.plc.runtime.javaCompilerClassLoader.DynamicCompiler;
 

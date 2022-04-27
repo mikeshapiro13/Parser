@@ -9,14 +9,13 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 
+import edu.ufl.cise.plc.runtime.ConsoleIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import edu.ufl.cise.plc.TypeCheckException;
 import edu.ufl.cise.plc.ast.ASTNode;
 import edu.ufl.cise.plc.ast.Program;
 import edu.ufl.cise.plc.runtime.ColorTuple;
-import edu.ufl.cise.plc.runtime.ConsoleIO;
 import edu.ufl.cise.plc.runtime.FileURLIO;
 import edu.ufl.cise.plc.runtime.ImageOps;
 import edu.ufl.cise.plc.runtime.javaCompilerClassLoader.PLCLangExec;
@@ -155,7 +154,7 @@ class Assignment6StarterTest {
 				      image[width,height] b <- url;
 				      ^b;
 				      """;
-		String url = "https://www.ufl.edu/media/wwwufledu/images/about/aerial_tigert_stadium.jpg";
+		String url = "https://images.unsplash.com/photo-1472457897821-70d3819a0e24?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80";
 		Object[] params = { url, 300, 200 };
 		BufferedImage refImage = showRef(FileURLIO.readImage(url, 300, 200));
 		show(check(input, params, refImage));
@@ -213,7 +212,7 @@ class Assignment6StarterTest {
                 ^b;
 
 				""";
-		String url = "https://www.ufl.edu/media/wwwufledu/images/nav/academics.jpg";
+		String url = "http://images.clipartpanda.com/peacock-border-clipart-1309642331_Clip_Art.png";
 		BufferedImage inputImage = FileURLIO.readImage(url);
 		int w = inputImage.getWidth();
 		int h = inputImage.getHeight();
