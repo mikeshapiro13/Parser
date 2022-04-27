@@ -299,6 +299,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		check(target != null, assignmentStatement, "Ident not initialized");
 		target.setInitialized(true);
 		Type varType = target.getType();
+		assignmentStatement.setTargetDec(target);
 		if (varType != IMAGE)
 		{
 			check(assignmentStatement.getSelector() == null, assignmentStatement, "Pixel selector not allowed for non-image");
@@ -389,47 +390,31 @@ public class TypeCheckVisitor implements ASTVisitor {
 	@Override
 	public Object visitVarDeclaration(VarDeclaration declaration, Object arg) throws Exception {
 		Type ndType = (Type) declaration.getNameDef().visit(this, arg);
+		declaration.setInitialized(true);
 		if (ndType == IMAGE)
 		{
 
 			if (declaration.getExpr() != null)
 			{
-				Type inType = (Type) declaration.getExpr().visit(this, arg);
-//				if (declaration.getDim() != null) {
-//					Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
-//					Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
-//					if (height == INT || width == INT)
-//						if (height != width)
-//							throw new TypeCheckException("Both dims not INTS");
-				if (inType != IMAGE) {
-					throw new TypeCheckException("Init type not IMAGE");
+				declaration.getNameDef().setInitialized(true);
+				if (declaration.getDim() == null)
+				{
+					Type inType = (Type) declaration.getExpr().visit(this, arg);
+
+					if (inType != IMAGE && inType != STRING)
+						throw new TypeCheckException("Init type not IMAGE");
 				}
-//				if (declaration.getOp().getKind() == Kind.ASSIGN) {
-//					Type exprType = (Type) declaration.getExpr().visit(this, arg);
-//					if (exprType == INT)
-//						declaration.getExpr().setCoerceTo(COLOR);
-//					else if (exprType == FLOAT)
-//						declaration.getExpr().setCoerceTo(COLORFLOAT);
-//					else if (exprType == COLOR || exprType == COLORFLOAT)
-//						declaration.getExpr().setCoerceTo(null);
-//					else
-//						throw new TypeCheckException("VarDec image assignment error");
-//				} else if (declaration.getOp().getKind() == Kind.LARROW) {
-//					Type exprType = (Type) declaration.getExpr().visit(this, arg);
-//					if (exprType != STRING && exprType != CONSOLE)
-//						throw new TypeCheckException("VarDec image read error");
-//				}
+				else if (declaration.getDim() != null)
+				{
+					Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
+					Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
+					if (height == INT || width == INT)
+						if (height != width)
+							throw new TypeCheckException("Both dims not INTS");
+				}
+				else
+					throw new TypeCheckException("Idk");
 			}
-			else if (declaration.getDim() != null)
-			{
-				Type height = (Type) declaration.getDim().getHeight().visit(this, arg);
-				Type width = (Type) declaration.getDim().getWidth().visit(this, arg);
-				if (height == INT || width == INT)
-					if (height != width)
-						throw new TypeCheckException("Both dims not INTS");
-			}
-			else
-				throw new TypeCheckException("Idk");
 		}
 		else if (declaration.getExpr() != null)
 		{
@@ -460,13 +445,10 @@ public class TypeCheckVisitor implements ASTVisitor {
 			}
 			declaration.getNameDef().setInitialized(true);
 		}
-		else if (declaration.getExpr() == null)
+		if (declaration.getExpr() == null)
 		{
 			declaration.setInitialized(false);
 		}
-		else
-			throw new TypeCheckException("Bad VarDec");
-
 		return ndType;
 	}
 
