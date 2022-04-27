@@ -123,11 +123,15 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitUnaryExpr(UnaryExpr unaryExpression, Object arg) throws Exception {
         StringBuilder u = new StringBuilder();
-        if (unaryExpression.getType() == Types.Type.INT || unaryExpression.getType() == Types.Type.COLOR)
+        if (unaryExpression.getType() == Types.Type.COLOR || (unaryExpression.getType() == Types.Type.INT && unaryExpression.getOp().getKind() == IToken.Kind.COLOR_OP))
         {
             u.append("ColorTuple.").append(unaryExpression.getOp().getText()).append("(");
             u.append(unaryExpression.getExpr().visit(this, arg)).append(")");
 
+        }
+        else if (unaryExpression.getType() == Types.Type.INT)
+        {
+            u.append(unaryExpression.getOp().getText()).append("(").append(unaryExpression.getExpr().getText()).append(")");
         }
         else if (unaryExpression.getType() == Types.Type.IMAGE)
         {
@@ -497,9 +501,16 @@ public class CodeGenVisitor implements ASTVisitor
             {
                 if (declaration.getOp().getKind() == IToken.Kind.LARROW)
                     v.append(" = ").append("(ColorTuple)").append("FileURLIO.readValueFromFile(").append(declaration.getExpr().visit(this, arg)).append(")");
+                else if (declaration.getExpr().getType() == Types.Type.INT)
+                    v.append(" = (new ColorTuple(").append(declaration.getExpr().getText()).append("))");
                 else
                     v.append(" = ").append(declaration.getExpr().visit(this, arg));
             }
+        }
+        else if (declaration.getType() == Types.Type.INT && (declaration.getExpr() != null && declaration.getExpr().getType() == Types.Type.COLOR))
+        {
+            v.append(declaration.getText()).append(" ").append(declaration.getNameDef().getName());
+            v.append(" = (").append(declaration.getExpr().getText()).append(".pack())");
         }
         else
         {
