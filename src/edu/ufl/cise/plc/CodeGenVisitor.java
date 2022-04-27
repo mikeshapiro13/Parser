@@ -361,6 +361,14 @@ public class CodeGenVisitor implements ASTVisitor
     @Override
     public Object visitReadStatement(ReadStatement readStatement, Object arg) throws Exception {
         StringBuilder r = new StringBuilder();
+        String check = "";
+        switch (readStatement.getTargetDec().getType())
+        {
+            case COLOR -> check = "ColorTuple";
+            case STRING -> check = "String";
+            case COLORFLOAT -> check = "ColorTuple";
+            default -> check = readStatement.getTargetDec().getType().toString().toLowerCase();
+        }
         if (readStatement.getTargetDec().getType() == Types.Type.IMAGE)
         {
             r.append(readStatement.getTargetDec().visit(this, arg)).append(" = FileURLIO.readImage(");
@@ -369,8 +377,10 @@ public class CodeGenVisitor implements ASTVisitor
                 r.append(", ").append(readStatement.getTargetDec().getDim().visit(this, arg));
             r.append(");\nFileURLIO.closeFiles();");
         }
+        else if (readStatement.getSource() instanceof ConsoleExpr)
+            r.append(readStatement.getName()).append(" = ").append(readStatement.getSource().visit(this, arg));
         else
-            r.append(readStatement.getName()).append(" = ").append(readStatement.getSource().visit(this, arg)).append(";\n");
+            r.append(readStatement.getName()).append(" = (").append(check).append(") FileURLIO.readValueFromFile(").append(readStatement.getSource().visit(this, arg)).append(");\n");
         return r;
     }
 
@@ -471,10 +481,13 @@ public class CodeGenVisitor implements ASTVisitor
         else if (declaration.getType() == Types.Type.COLOR)
         {
             v.append("ColorTuple ").append(declaration.getName());
-            if (declaration.getOp().getKind() == IToken.Kind.LARROW)
-                v.append(" = ").append("(ColorTuple)").append("FileURLIO.readValueFromFile(").append(declaration.getExpr().visit(this, arg)).append(")");
-            else
-                v.append(" = ").append(declaration.getExpr().visit(this, arg));
+            if (declaration.getOp() != null)
+            {
+                if (declaration.getOp().getKind() == IToken.Kind.LARROW)
+                    v.append(" = ").append("(ColorTuple)").append("FileURLIO.readValueFromFile(").append(declaration.getExpr().visit(this, arg)).append(")");
+                else
+                    v.append(" = ").append(declaration.getExpr().visit(this, arg));
+            }
         }
         else
         {
@@ -482,15 +495,18 @@ public class CodeGenVisitor implements ASTVisitor
             if (check.equals("string"))
                 check = "String";
             v.append(check).append(" ").append(declaration.getName());
-            if (declaration.getOp().getKind() != IToken.Kind.LARROW) {
-                v.append(" = ").append(declaration.getExpr().visit(this, arg));
-                //if (check.equals("float"))
-                //v.append("f");
-            }
+            if (declaration.getOp() != null)
+                if (declaration.getOp().getKind() != IToken.Kind.LARROW)
+                    v.append(" = ").append(declaration.getExpr().visit(this, arg));
             else
             {
-                v.append(" = (").append(check).append(")");
-                v.append("FileURLIO.readValueFromFile(").append(declaration.getExpr().visit(this, arg)).append(")");
+                if (declaration.getExpr() instanceof ConsoleExpr)
+                    v.append(" = ").append(declaration.getExpr().visit(this, arg));
+                else
+                {
+                    v.append(" = (").append(check).append(")");
+                    v.append("FileURLIO.readValueFromFile(").append(declaration.getExpr().visit(this, arg)).append(")");
+                }
             }
         }
         v.append(";\n");
