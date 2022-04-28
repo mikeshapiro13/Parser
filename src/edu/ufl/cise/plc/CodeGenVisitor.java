@@ -383,6 +383,7 @@ public class CodeGenVisitor implements ASTVisitor
             case COLOR -> check = "ColorTuple";
             case STRING -> check = "String";
             case COLORFLOAT -> check = "ColorTuple";
+            case IMAGE -> check = "BufferedImage";
             default -> check = readStatement.getTargetDec().getType().toString().toLowerCase();
         }
         if (readStatement.getTargetDec().getType() == Types.Type.IMAGE)
@@ -405,14 +406,14 @@ public class CodeGenVisitor implements ASTVisitor
         StringBuilder p = new StringBuilder();
         p.append("package ").append(packageName).append(";\n");
         String test = program.getDecsAndStatements().toString();
-        //if (program.getDecsAndStatements().toString().lastIndexOf("ConsoleExpr") > 0)
-            p.append("import edu.ufl.cise.plc.runtime.ConsoleIO;\n");
         String check = program.getReturnType().toString().toLowerCase();
-        //if (program.getReturnType() == Types.Type.IMAGE)
+        if (test.lastIndexOf("ConsoleExpr") > 0)
+            p.append("import edu.ufl.cise.plc.runtime.ConsoleIO;\n");
+        if (test.lastIndexOf("IMAGE") > 0)
             p.append("import java.awt.image.BufferedImage;\n");
-        //else if (program.getReturnType() == Types.Type.COLOR)
+        if (test.lastIndexOf("COLOR") > 0 || test.lastIndexOf("ColorExpr") > 0 || check.equals("color"))
             p.append("import edu.ufl.cise.plc.runtime.ColorTuple;\n");
-        //if (program.getDecsAndStatements().toString().contains("VarDeclaration") && program.getDecsAndStatements().toString().contains("LARROW"))
+        if (test.lastIndexOf("WriteStatement") > 0 || test.lastIndexOf("ReadStatement") > 0 || test.lastIndexOf("url") > 0 || test.lastIndexOf("IMAGE") > 0)
             p.append("import edu.ufl.cise.plc.runtime.FileURLIO;\n");
             p.append("import edu.ufl.cise.plc.runtime.ImageOps;\n");
             p.append("import java.awt.Color;");
