@@ -131,7 +131,10 @@ public class CodeGenVisitor implements ASTVisitor
         }
         else if (unaryExpression.getType() == Types.Type.INT)
         {
-            u.append(unaryExpression.getOp().getText()).append("(").append(unaryExpression.getExpr().getText()).append(")");
+            if (unaryExpression.getExpr().getType() == Types.Type.IMAGE)
+                u.append(unaryExpression.getExpr().getText()).append(".").append(unaryExpression.getOp().getText()).append("()");
+            else
+                u.append(unaryExpression.getOp().getText()).append("(").append(unaryExpression.getExpr().getText()).append(")");
         }
         else if (unaryExpression.getType() == Types.Type.IMAGE)
         {

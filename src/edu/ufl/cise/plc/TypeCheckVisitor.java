@@ -517,7 +517,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		unaryExprPostfix.getSelector().visit(this, arg);
 		unaryExprPostfix.setType(Type.INT);
 		unaryExprPostfix.setCoerceTo(COLOR);
-		return Type.IMAGE;
+		return Type.INT;
 	}
 
 }
